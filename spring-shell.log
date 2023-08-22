@@ -1,0 +1,68 @@
+1678676926274:add 1 2
+1678676933848:add -a 1 -b 2
+1678676947198:add --a 1 --b 2
+1678676972141:help
+1678677076519:exit
+1678677085533:help
+1678677090812:exit
+1678678003207:help
+1678678393904:cypher "return 1"
+1678678469974:cypher "match (n:Person) return n"
+1678679653234:cypher "asjflksadjfl;"
+1678679681188:cypher "match return "
+1678682613955:match n return n
+1678683446342:help
+1678683465191:"match (n:Person) return n"
+1678684330536:run "return 1"
+1678684340146:run
+1678684355686:run return 1
+1678684394085:run "return 0"
+1678685506549:run "return 1"
+1678685520659:clear
+1678685529409:run "return 0"
+1678685538978:run "match(n:Person) return n"
+1678685568273:clear
+1678685569780:run "match(n:Person) return n"
+1678685581517:run
+1678685591394:run "match\n\n"
+1678685791678:clear
+1678685901899:run "match(n:Person) return n limit 20"
+1678687944049:run "MATCH (n:Person {id: 313194139537358 })-[r:KNOWS]-(friend)\nRETURN\n    friend.id AS personId,\n    friend.firstName AS firstName,\n    friend.lastName AS lastName,\n    r.creationDate AS friendshipCreationDateORDER BY\n    friendshipCreationDate DESC,\n    toInteger(personId) ASC"
+1678687975364:run "MATCH (n:Person {id: 313194139537358 })-[r:KNOWS]-(friend)\nRETURN\n    friend.id AS personId,\n    friend.firstName AS firstName,\n    friend.lastName AS lastName,\n    r.creationDate AS friendshipCreationDate\nORDER BY\n    friendshipCreationDate DESC,\n    toInteger(personId) ASC"
+1678688127706:run "match (n:Person) return n.firstName+' '+n.lastName as name, n.birthday order by n.birtyday limit 10"
+1678688155246:stacktrace
+1678688241037:run "match (n:Person) return n.firstName+' '+n.lastName as name"
+1678688265372:run "match (n:Person) return n.firstName+' '+n.lastName as name, n.birthday as birthday order by birthday limit 10"
+1678782674991:run "match (n:Person) return n.firstName limit 20" --ast --pp
+1678782732641:run "match (n:Person) return n.firstName limit 10" --pp
+1678782745125:run "match (n:Person) return n.firstName limit 10"
+1679143745624:sql ""
+1679208578945:run "MATCH (n:Person {id: 313194139537358 })-[r:KNOWS]-(friend)\nRETURN\n    friend.id AS personId,\n    friend.firstName AS firstName,\n    friend.lastName AS lastName,\n    r.creationDate AS friendshipCreationDate\nORDER BY\n    friendshipCreationDate DESC,\n    toInteger(personId) ASC"
+1679208597463:run "MATCH (n:Person {id: 313194139537358 })-[r:KNOWS]-(friend)\nRETURN\n    friend.id AS personId,\n    friend.firstName AS firstName,\n    friend.lastName AS lastName,\n    r.creationDate AS friendshipCreationDate\nORDER BY\n    friendshipCreationDate DESC,\n    toInteger(personId) ASC" --line 10
+1679210838265:run "MATCH (n:Person {id: 313194139537358 })-[r:KNOWS]-(friend)\nRETURN\n    friend.id AS personId,\n    friend.firstName AS firstName,\n    friend.lastName AS lastName,\n    r.creationDate AS friendshipCreationDate\nORDER BY\n    friendshipCreationDate DESC,\n    toInteger(personId) ASC" --line 10 --pp
+1679212875079:run "MATCH (n:Person {id: 313194139537358 })-[r:KNOWS]-(friend)\nRETURN\n    friend.id AS personId,\n    friend.firstName AS firstName,\n    friend.lastName AS lastName,\n    r.creationDate AS friendshipCreationDate\nORDER BY\n    friendshipCreationDate DESC,\n    toInteger(personId) ASC" --line 20
+1679215005452:run
+1692338167429:SQL
+1692338192787:run "match (n) return n limit 10"
+1692338370802:stacktrace
+1692338410284:run "match(n:Person) return n limit 10"
+1692338508941:SQL 123
+1692338515928:SQL "123"
+1692338522487:run "123"
+1692338540613:run "return 1"
+1692522905706:match (n) return n
+1692522913347:stacktrace
+1692522936460:run "match (n) return n"
+1692523040198:run "match p=(<id>:'Robb')-[*..3]->() return p"
+1692523613490:run "match(n) return n"
+1692523673851:run "match({name:'Robb'}-[*..3]->(f) return f.name)"
+1692523706034:run "match({name:'Robb'})-[*..3]->(f) return f.name)"
+1692523725616:run "match({name:'Robb'})-[*..3]->(f) return f.name"
+1692524322319:run "123"
+1692524331520:run "match (n)"
+1692524484103:run "match (n) return n"
+1692524505840:run "123"
+1692524526367:run "match (n) return n"
+1692526179704:explain "match (n) return n"
+1692526276356:run "match(n) return n" -lp -pp
+1692526294134:run "match(n) return n" --lp --pp
