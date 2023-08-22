@@ -14,12 +14,43 @@ import java.sql.{Connection, DriverManager, ResultSet}
 import java.time.LocalDate
 import java.util.Date
 import Schema._
+import Mapper._
+import org.grapheco.lynx.physical.{NodeInput, RelationshipInput}
 
 class MyGraph extends GraphModel {
   val connection = DB.connection
 
-  override def write: WriteTask = ???
+  override def write: WriteTask = new WriteTask {
+    override def createElements[T](nodesInput: Seq[(String, NodeInput)], relationshipsInput: Seq[(String, RelationshipInput)], onCreated: (Seq[(String, LynxNode)], Seq[(String, LynxRelationship)]) => T): T = ???
+
+    override def deleteRelations(ids: Iterator[LynxId]): Unit = ???
+
+    override def deleteNodes(ids: Seq[LynxId]): Unit = ???
+
+    override def updateNode(lynxId: LynxId, labels: Seq[LynxNodeLabel], props: Map[LynxPropertyKey, LynxValue]): Option[LynxNode] = ???
+
+    override def updateRelationShip(lynxId: LynxId, props: Map[LynxPropertyKey, LynxValue]): Option[LynxRelationship] = ???
+
+    override def setNodesProperties(nodeIds: Iterator[LynxId], data: Array[(LynxPropertyKey, Any)], cleanExistProperties: Boolean): Iterator[Option[LynxNode]] = ???
+
+    override def setNodesLabels(nodeIds: Iterator[LynxId], labels: Array[LynxNodeLabel]): Iterator[Option[LynxNode]] = ???
+
+    override def setRelationshipsProperties(relationshipIds: Iterator[LynxId], data: Array[(LynxPropertyKey, Any)]): Iterator[Option[LynxRelationship]] = ???
+
+    override def setRelationshipsType(relationshipIds: Iterator[LynxId], typeName: LynxRelationshipType): Iterator[Option[LynxRelationship]] = ???
+
+    override def removeNodesProperties(nodeIds: Iterator[LynxId], data: Array[LynxPropertyKey]): Iterator[Option[LynxNode]] = ???
+
+    override def removeNodesLabels(nodeIds: Iterator[LynxId], labels: Array[LynxNodeLabel]): Iterator[Option[LynxNode]] = ???
+
+    override def removeRelationshipsProperties(relationshipIds: Iterator[LynxId], data: Array[LynxPropertyKey]): Iterator[Option[LynxRelationship]] = ???
+
+    override def removeRelationshipsType(relationshipIds: Iterator[LynxId], typeName: LynxRelationshipType): Iterator[Option[LynxRelationship]] = ???
+
+    override def commit: Boolean = true
+  }
   override def nodeAt(id: LynxId): Option[LynxNode] = ???
+  override def relationships(): Iterator[PathTriple] = ???
 
   private def DemoNodeAt(id: LynxId, tableList: List[String]): Option[DemoNode] = {
     tableList.flatMap { t =>
@@ -29,20 +60,11 @@ class MyGraph extends GraphModel {
   }
 
 
-  override def nodes(): Iterator[DemoNode] = {
-    // iterate all node tables
-    val allNodes = for (tableName <- nodeSchema.keys) yield {
-      val statement = connection.createStatement
-      val data = statement.executeQuery(s"select * from $tableName")
-
-      // transform all rows in the table to LynxNode
-      Iterator.continually(data).takeWhile(_.next())
-        .map { resultSet => rowToNode(resultSet, tableName, nodeSchema(tableName)) }
+  override def nodes(): Iterator[DemoNode] =
+    Schema.nodeSchema.keys.toIterator.flatMap{ t =>
+      val sql = s"select * from ${t}"
+      DB.iterExecute(sql).map { resultSet => Mapper.mapNode(resultSet, t, nodeSchema(t)) }
     }
-
-    println("nodes() finished")
-    allNodes.flatten.iterator
-  }
 
   override def nodes(nodeFilter: NodeFilter): Iterator[DemoNode] = {
 
@@ -51,31 +73,13 @@ class MyGraph extends GraphModel {
     }
 
     val tableName = nodeFilter.labels.head.toString
-    val conditions = nodeFilter.properties.map { case (key, value) => s"`${key.toString}` = '${value.value}'" }.toArray
-
-    var sql = "select * from " + tableName
-
-    // add conditions to the sql query
-    for (i <- conditions.indices) {
-      if (i == 0) {
-        sql = sql + " where " + conditions(i)
-      } else {
-        sql = sql + " and " + conditions(i)
-      }
-    }
-
-    println(sql)
-
-    val statement = connection.createStatement
-    val startTime2 = System.currentTimeMillis()
-    val data = statement.executeQuery(sql)
-    println("nodes(nodeFilter) SQL used: " + (System.currentTimeMillis() - startTime2) + " ms")
-
-    // transform the rows in the sql result to LynxNodes
-    val result = Iterator.continually(data).takeWhile(_.next())
-      .map { resultSet => rowToNode(resultSet, tableName, nodeSchema(tableName)) }
-
-    result
+    val conditions = nodeFilter.properties.map { case (key, value) => s"${key.toString} = '${value.value}'" }.toArray
+      .mkString(" and ")
+    val sql = s"select * from ${tableName} ${
+      if (conditions.isEmpty) ""
+      else " where " + conditions
+    }"
+    DB.iterExecute(sql).map { resultSet => Mapper.mapNode(resultSet, tableName, nodeSchema(tableName)) }
   }
 //
 //  /**
@@ -225,81 +229,68 @@ class MyGraph extends GraphModel {
 //    result
 //  }
 //
-//  /**
-//   * Used for path like (A)-[B]->(C), but here A may be more than one node
-//   * Allow multi-hop queries like (A)-[B*0..]->(C)
-//   * @param startNodeFilter node filter of A
-//   * @param relationshipFilter relationship filter of B
-//   * @param endNodeFilter node filter of C
-//   * @param direction OUTGOING (-[B]->) or INCOMING (<-[B]-)
-//   * @param upperLimit maximum length of path
-//   * @param lowerLimit minimum length of path
-//   * @return Iterator[LynxPath]
-//   */
-//  override def paths(startNodeFilter: NodeFilter, relationshipFilter: RelationshipFilter, endNodeFilter: NodeFilter,
-//                     direction: SemanticDirection, upperLimit: Int, lowerLimit: Int): Iterator[LynxPath] = {
-//    //TODO: 暂不支持多跳的情况
-//    if (upperLimit != 1 || lowerLimit != 1) {
-//      throw new RuntimeException("Upper limit or lower limit not support")
-//    }
-//
-//    val startTime1 = System.currentTimeMillis()
-//
-//    if (direction == BOTH) {
-//      return paths(startNodeFilter, relationshipFilter, endNodeFilter, OUTGOING, upperLimit, lowerLimit) ++
-//        paths(startNodeFilter, relationshipFilter, endNodeFilter, INCOMING, upperLimit, lowerLimit)
-//    }
-//
-//    val relType = relationshipFilter.types.head.toString
-//    val startTables = if (startNodeFilter.labels.nonEmpty) {startNodeFilter.labels.map(_.toString).toArray}
-//                      else {relMapping(relType)._1}
-//    val endTables = if (endNodeFilter.labels.nonEmpty) {endNodeFilter.labels.map(_.toString).toArray}
-//                    else {relMapping(relType)._2}
-//    val conditions = Array.concat(
-//      startNodeFilter.properties.map { case (key, value) => s"t1.`${key.toString}` = '${value.value}'" }.toArray,
-//      relationshipFilter.properties.map { case (key, value) => s"$relType.`${key.toString}` = '${value.value}'" }.toArray,
-//      endNodeFilter.properties.map { case (key, value) => s"t2.`${key.toString}` = '${value.value}'" }.toArray
-//    )
-//
-//    // iterate through all possible combinations
-//    val finalResult = for {
-//      startTable: String <- startTables
-//      endTable: String <- endTables
-//    } yield {
-//      var sql = s"select * from $startTable as t1 join $relType on t1.`id:ID` = "
-//      direction match {
-//        case OUTGOING => sql = sql + s"$relType.`:START_ID` join $endTable as t2 on t2.`id:ID` = $relType.`:END_ID`"
-//        case INCOMING => sql = sql + s"$relType.`:END_ID` join $endTable as t2 on t2.`id:ID` = $relType.`:START_ID`"
-//      }
-//
-//      for (i <- conditions.indices) {
-//        if (i == 0) {
-//          sql = sql + " where " + conditions(i)
-//        } else {
-//          sql = sql + " and " + conditions(i)
-//        }
-//      }
-//
-//      println(sql)
-//
-//      val statement = connection.createStatement
-//      val startTime1 = System.currentTimeMillis()
-//      val data = statement.executeQuery(sql)
-//      println("paths() combined SQL used: " + (System.currentTimeMillis() - startTime1) + " ms")
-//
-//      // transform rows in the result to LynxPaths
-//      Iterator.continually(data).takeWhile(_.next()).map{ resultSet =>
-//        PathTriple(
-//          rowToNodeOffset(resultSet, startTable, nodeSchema(startTable), 0),
-//          rowToRelOffset(resultSet, relType, relSchema(relType), nodeSchema(startTable).length),
-//          rowToNodeOffset(resultSet, endTable, nodeSchema(endTable), nodeSchema(startTable).length + relSchema(relType).length)
-//        ).toLynxPath
-//      }
-//    }
-//
-//    println("paths() combined totally used: " + (System.currentTimeMillis() - startTime1) + " ms")
-//    finalResult.iterator.flatten
-//  }
+  /**
+   * Used for path like (A)-[B]->(C), but here A may be more than one node
+   * Allow multi-hop queries like (A)-[B*0..]->(C)
+   * @param startNodeFilter node filter of A
+   * @param relationshipFilter relationship filter of B
+   * @param endNodeFilter node filter of C
+   * @param direction OUTGOING (-[B]->) or INCOMING (<-[B]-)
+   * @param upperLimit maximum length of path
+   * @param lowerLimit minimum length of path
+   * @return Iterator[LynxPath]
+   */
+  override def paths(startNodeFilter: NodeFilter, relationshipFilter: RelationshipFilter, endNodeFilter: NodeFilter,
+                     direction: SemanticDirection, upperLimit: Int, lowerLimit: Int): Iterator[LynxPath] = {
+
+    if (upperLimit != 1 || lowerLimit != 1) throw new RuntimeException("Upper limit or lower limit not support")
+
+    if (direction == BOTH) {
+      return paths(startNodeFilter, relationshipFilter, endNodeFilter, OUTGOING, upperLimit, lowerLimit) ++
+        paths(startNodeFilter, relationshipFilter, endNodeFilter, INCOMING, upperLimit, lowerLimit)
+    }
+
+    val relType = relationshipFilter.types.head.toString
+    val startTables = if (startNodeFilter.labels.nonEmpty) {startNodeFilter.labels.map(_.toString).toArray}
+                      else {relMapping(relType)._1}
+    val endTables = if (endNodeFilter.labels.nonEmpty) {endNodeFilter.labels.map(_.toString).toArray}
+                    else {relMapping(relType)._2}
+    val conditions = Array.concat(
+      startNodeFilter.properties.map { case (key, value) => s"t1.`${key.toString}` = '${value.value}'" }.toArray,
+      relationshipFilter.properties.map { case (key, value) => s"$relType.`${key.toString}` = '${value.value}'" }.toArray,
+      endNodeFilter.properties.map { case (key, value) => s"t2.`${key.toString}` = '${value.value}'" }.toArray
+    )
+
+    // iterate through all possible combinations
+    val finalResult = for {
+      startTable: String <- startTables
+      endTable: String <- endTables
+    } yield {
+      var sql = s"select * from $startTable as t1 join $relType on t1.`id:ID` = "
+      direction match {
+        case OUTGOING => sql = sql + s"$relType.`:START_ID` join $endTable as t2 on t2.`id:ID` = $relType.`:END_ID`"
+        case INCOMING => sql = sql + s"$relType.`:END_ID` join $endTable as t2 on t2.`id:ID` = $relType.`:START_ID`"
+      }
+
+      for (i <- conditions.indices) {
+        if (i == 0) {
+          sql = sql + " where " + conditions(i)
+        } else {
+          sql = sql + " and " + conditions(i)
+        }
+      }
+
+      DB.iterExecute(sql).map{ resultSet =>
+        PathTriple(
+          mapNode(resultSet, startTable, nodeSchema(startTable)),
+          mapRel(resultSet, relType, relSchema(relType)),
+          mapNode(resultSet, endTable, nodeSchema(endTable))
+        ).toLynxPath
+      }
+    }
+
+    finalResult.iterator.flatten
+  }
 
 // 原来的paths()
 /*  override def paths(startNodeFilter: NodeFilter, relationshipFilter: RelationshipFilter, endNodeFilter: NodeFilter,
