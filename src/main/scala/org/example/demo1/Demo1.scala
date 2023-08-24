@@ -55,7 +55,7 @@ class Demo1 extends GraphModel {
    */
   // Load CSV
   private val file = new File("/Users/huchuan/Documents/GitHub/Lynx_Demo/src/main/scala/org/example/demo1/game-of-thrones.csv")
-  private val raw: List[List[String]] = CSVReader.open(file).all()
+  private val raw: List[List[String]] = CSVReader.open(file).all().tail
 
   // Covert to nodes and relationships
   private val allNodes: Map[Id, Node] = raw.flatMap(_.take(2)).distinct.map{ str => Id(str) -> Node(str)}.toMap
