@@ -1,6 +1,7 @@
 package org.example
 
 import org.example.demo1.Demo1
+import org.example.demo2.Demo2
 import org.jline.utils.{AttributedString, AttributedStyle}
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -12,8 +13,8 @@ import org.springframework.stereotype.Component
 class DemoShellApplication
 
 object DemoShellApplication extends App {
-  val demos = List(new Demo1)
-  var runner = new DemoRunner(demos.head)
+  val demos = List(new Demo1, new Demo2)
+  var runner = new DemoRunner(demos(1))
   SpringApplication.run(classOf[DemoShellApplication])
 }
 
@@ -28,7 +29,7 @@ object DemoShellApplication extends App {
 
   @ShellMethod(value="Set Demo.")
   def set(i: Int): Unit = {
-    DemoShellApplication.runner = new DemoRunner(DemoShellApplication.demos(i))
+    DemoShellApplication.runner = new DemoRunner(DemoShellApplication.demos(i+1))
   }
 
   @ShellMethod(value="Run cypher.")
@@ -40,11 +41,8 @@ object DemoShellApplication extends App {
     DemoShellApplication.runner.run(query, Map.empty,ast, lp, pp).show(line)
 
   @ShellMethod(value="Explain cypher.")
-  def explain(query: String,
-              @ShellOption(defaultValue = "false") ast: Boolean,
-              @ShellOption(defaultValue = "false") lp: Boolean,
-              @ShellOption(defaultValue = "false") pp: Boolean):Unit =
-    DemoShellApplication.runner.run(query, Map.empty,ast, lp, pp)
+  def explain(query: String):Unit =
+    DemoShellApplication.runner.run(query, Map.empty, true, true, true)
 
 }
 

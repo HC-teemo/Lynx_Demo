@@ -19,9 +19,11 @@ object DB extends LazyLogging{
     statement.executeQuery(sql)
   }
 
+
   def iterExecute(sql: String): Iterator[ResultSet] = {
-    logger.error(sql)
+    logger.info(sql)
     val statement = connection.createStatement()
-    Iterator.continually(statement.executeQuery(sql)).takeWhile(_.next())
+    val result = statement.executeQuery(sql)
+    Iterator.continually(result).takeWhile(_.next())
   }
 }

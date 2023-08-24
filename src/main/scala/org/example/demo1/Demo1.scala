@@ -1,6 +1,7 @@
 package org.example.demo1
 
 import com.github.tototoshi.csv.CSVReader
+import org.example.EmptyWriteTask
 import org.grapheco.lynx.runner.{CypherRunner, GraphModel, WriteTask}
 import org.grapheco.lynx.types.LynxValue
 import org.grapheco.lynx.types.property.LynxInteger
@@ -10,7 +11,7 @@ import java.io.File
 
 class Demo1 extends GraphModel {
 
-  /*
+  /**
   * STEP 1. Impl lynx elements.
   * LynxId, LynxNode, LynxRelationship
   * */
@@ -53,7 +54,7 @@ class Demo1 extends GraphModel {
    * csv -> List[List[String]\] -> nodes and relationships
    */
   // Load CSV
-  private val file = new File("/Users/huchuan/Documents/GitHub/Lynx_Demo/src/main/resources/game-of-thrones.csv")
+  private val file = new File("/Users/huchuan/Documents/GitHub/Lynx_Demo/src/main/scala/org/example/demo1/game-of-thrones.csv")
   private val raw: List[List[String]] = CSVReader.open(file).all()
 
   // Covert to nodes and relationships
@@ -65,7 +66,7 @@ class Demo1 extends GraphModel {
    * STEP 3. Impl three data methods.
    * nodeAt(), nodes() & relationships()
    */
-  override def write: WriteTask = ???
+  override def write: WriteTask = new EmptyWriteTask
 
   override def nodeAt(id: LynxId): Option[LynxNode] = id match {
     case i:Id => allNodes.get(i)
@@ -83,5 +84,12 @@ class Demo1 extends GraphModel {
    */
   val runner = new CypherRunner(this)
 
+}
+
+object App {
+  def main(args: Array[String]): Unit = {
+    val demo = new Demo1
+    demo.runner.run("Match (n) return n", Map.empty).show()
+  }
 }
 

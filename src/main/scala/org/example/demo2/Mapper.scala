@@ -10,10 +10,10 @@ import java.sql.ResultSet
 import java.time.LocalDate
 
 object Mapper {
-  private final val ID_COL_NAME: String = "id:ID"
-  private final val REL_ID_COL_NAME: String = "REL_ID"
-  private final val START_ID_COL_NAME: String = ":START_ID"
-  private final val END_ID_COL_NAME: String = ":END_ID"
+  final val ID_COL_NAME: String = "id"
+  final val REL_ID_COL_NAME: String = "REL_ID"
+  final val START_ID_COL_NAME: String = "START_ID"
+  final val END_ID_COL_NAME: String = "END_ID"
 
   private def mapId(row: ResultSet): DemoId = DemoId(row.getLong(ID_COL_NAME))
   private def mapRelId(row: ResultSet): DemoId = DemoId(row.getLong(REL_ID_COL_NAME))
